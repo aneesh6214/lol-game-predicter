@@ -1,21 +1,51 @@
-# Modeling & Feature Engineering (Planned)
+# Modeling & Feature Engineering (Step 2)
 
 ## Overview
-This phase will transform the raw data from Step 1 into a set of features suitable for machine learning models. It will also involve building, testing, and refining various predictive models.
+This phase aims to transform the raw match data into a format suitable for machine learning models. Build and evaluate multiple models and compare performance.
 
-## Planned Activities
-1. **Feature Engineering:**
-   - Convert champion selections into numerical representations (e.g., one-hot encoding, embeddings).
-   - Consider team-level aggregate statistics, champion synergy, or role distributions.
+## Iteration 1: Logistic Regression Model
 
-2. **Model Selection:**
-   - Experiment with multiple classification algorithms (logistic regression, random forest, gradient boosting).
-   - Use training-validation splits and cross-validation to ensure robust performance estimates.
+### Goal
+- Transform raw champion draft data into numerical features.
+- Apply a simple logistic regression model to predict match outcomes.
 
-3. **Hyperparameter Tuning:**
-   - Optimize model parameters to improve accuracy and generalization.
+### Feature Engineering
+- **Champion Encoding:**
+  - Used **MultiLabelBinarizer** to convert lists of champions into a binary matrix.
+  - Each column represents a unique champion-team combination (e.g., `blue_Garen`, `red_Thresh`).
+  - This resulted in a feature set where each match is represented by multiple binary indicators.
 
-4. **Comparison & Benchmarking:**
-   - Compare performance of multiple models and select the most promising candidate.
+### Model Selection
+- **Chosen Algorithm:** Logistic Regression
+  - Selected for its simplicity and ability to provide a quick baseline.
+  - Suitable for binary classification (win/loss prediction).
 
-Once modeling and feature engineering are underway, documentation will be updated to reflect choices, outcomes, and reasoning behind each decision.
+### Hyperparameter Tuning
+- **Parameter Tuned:** Regularization strength (`C`)
+  - Explored different values of `C` to find the optimal balance between bias and variance.
+  - Conducted a grid search over a range of `C` values (e.g., 0.01, 0.1, 1, 10).
+
+### Results
+- **Accuracy:** ~52%
+  - Slight improvement over random guessing (50%).
+  - Indicates that champion picks alone offer limited predictive power with the current feature set.
+
+### Observations
+- **Model Performance:** 
+  - The logistic regression model struggled to capture the complex interactions between champions.
+  - Possible overfitting or underfitting due to the high dimensionality of the feature space.
+
+### Next Steps
+1. **Advanced Feature Engineering:**
+   - Incorporate champion roles and synergies.
+   - Include additional features such as player statistics or match duration.
+2. **Model Exploration:**
+   - Experiment with more complex algorithms (e.g., Random Forest, Gradient Boosting).
+   - Utilize ensemble methods to improve predictive performance.
+3. **Data Augmentation:**
+   - Increase dataset size beyond 20,000 rows for better generalization.
+   - Ensure diverse champion combinations to enhance model learning.
+
+## Summary
+The initial logistic regression model provided a baseline accuracy of 52%. While this is a modest improvement, it highlights the need for more sophisticated feature engineering and potentially more complex models to effectively predict match outcomes based on champion selections.
+

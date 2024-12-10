@@ -15,7 +15,7 @@ AMERICAS_REGION = "americas"
 TIER = "GOLD"
 DIVISION = "I"
 QUEUE = "RANKED_SOLO_5x5"
-REQUEST_DELAY = 1
+REQUEST_DELAY = 1/15  # ~0.067 seconds per request (about 15 requests/sec)
 MAX_SUMMONERS = 2000
 MATCHES_PER_PLAYER = 20
 OUTPUT_SUMMONERS_CSV = "output_files/gold_summoners.csv"
@@ -33,9 +33,9 @@ def riot_get(url):
         if resp.status_code == 200:
             return resp
         elif resp.status_code == 429:
-            # Rate limit exceeded, wait and retry
-            print("429 rate limit hit, waiting 10 seconds...")
-            time.sleep(10)
+            # Rate limit exceeded, wait 2 minutes then retry
+            print("429 rate limit hit, waiting 120 seconds...")
+            time.sleep(120)
         else:
             # Other errors: print and try waiting a bit
             print(f"Error {resp.status_code}: {resp.text}")
@@ -44,8 +44,6 @@ def riot_get(url):
 def get_gold_summoners(api_key, region, queue, tier, division, max_pages=1):
     """
     Get a list of summoners in the specified tier/division.
-    This uses the League-V4 entries endpoint.
-    Adjust max_pages to fetch more summoners.
     """
     summoner_entries = []
     for page in range(1, max_pages+1):
@@ -55,13 +53,12 @@ def get_gold_summoners(api_key, region, queue, tier, division, max_pages=1):
         if not data:
             break
         summoner_entries.extend(data)
-        # Sleep to respect rate limits
         time.sleep(REQUEST_DELAY)
     return pd.DataFrame(summoner_entries)
 
 def get_summoner_info(summoner_id, api_key, region):
     """
-    Get summoner info (including puuid) from encryptedSummonerId using Summoner-V4.
+    Get summoner info (including puuid).
     """
     url = f"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/{summoner_id}?api_key={api_key}"
     resp = riot_get(url)
@@ -69,7 +66,7 @@ def get_summoner_info(summoner_id, api_key, region):
 
 def get_match_ids_by_puuid(puuid, api_key, region, start=0, count=20, queue=420):
     """
-    Get recent match IDs for a given puuid from Match-V5.
+    Get recent match IDs for a given puuid.
     """
     url = (f"https://{region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
            f"?queue={queue}&type=ranked&start={start}&count={count}&api_key={api_key}")
@@ -78,7 +75,7 @@ def get_match_ids_by_puuid(puuid, api_key, region, start=0, count=20, queue=420)
 
 def get_match_info(match_id, api_key, region):
     """
-    Get detailed match info for a given match_id from Match-V5.
+    Get detailed match info.
     """
     url = f"https://{region}.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
     resp = riot_get(url)
@@ -87,6 +84,8 @@ def get_match_info(match_id, api_key, region):
 # ===================================
 # DATA COLLECTION WORKFLOW
 # ===================================
+
+start_time = time.time()
 
 # Step 1: Get a set of Gold-tier summoners
 print("Fetching Gold summoners...")
@@ -131,26 +130,15 @@ match_data_list = []
 for i, row in matchids_df.iterrows():
     match_id = row['matchid']
     match_data = get_match_info(match_id, API_KEY, AMERICAS_REGION)
-    # Extract relevant info:
-    # We want champion picks and outcome. The info key: match_data['info']
-    # 'participants' is a list of 10 players. 'teams' gives who won.
     info = match_data.get('info', {})
     teams = info.get('teams', [])
     participants = info.get('participants', [])
 
-    # Determine who won (True/False) for the blue team (teamId=100)
-    # Normally, teamId=100 is "Blue", teamId=200 is "Red".
     blue_win = None
-    red_win = None
     for t in teams:
         if t['teamId'] == 100:
             blue_win = t['win']
-        elif t['teamId'] == 200:
-            red_win = t['win']
 
-    # Extract champion picks
-    # Participants are listed in a fixed order. Typically first 5 are team 100, next 5 are team 200
-    # Just get their champion names or IDs
     blue_team_champs = [p['championName'] for p in participants if p['teamId'] == 100]
     red_team_champs = [p['championName'] for p in participants if p['teamId'] == 200]
 
@@ -162,7 +150,11 @@ for i, row in matchids_df.iterrows():
     }
 
     match_data_list.append(match_record)
-    print(f'{i} - added entry {match_record}')
+
+    # Progress indicator every 500 rows
+    if i % 500 == 0 and i > 0:
+        elapsed = time.time() - start_time
+        print(f"Processed {i} matches so far, elapsed time: {elapsed:.2f} seconds")
     time.sleep(REQUEST_DELAY)
 
 final_df = pd.DataFrame(match_data_list)
