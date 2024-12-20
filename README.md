@@ -12,3 +12,5 @@ This folder contains documentation for the "League of Legends Outcome Predicter"
 - [CI/CD & Maintenance](./maintenance_future_work.md) *(To be Completed)*
 
 Each document outlines a different phase or aspect of the project. As the project evolves, these documents will be updated to reflect my current process, decisions made, and any changes in scope.
+
+**Important!!!** Python 3.10.0 or earlier must be used to ensure compatibility with tensorflow.
