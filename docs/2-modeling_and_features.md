@@ -9,6 +9,14 @@ This phase aims to transform the raw match data into a format suitable for machi
 - Transform raw champion draft data into numerical features.
 - Apply a simple logistic regression model to predict match outcomes.
 
+### Training Data
+- 20K Rows, Sample:
+```
+match_id       | blue_team_champs                     | red_team_champs                             | blue_win
+NA1_5121379795 | "Kayle,JarvanIV,Garen,Smolder,Senna" | "Mordekaiser,Darius,Belveth,Seraphine,Nami" | False
+NA1_5124368116 | "Garen,Gragas,Ryze,Caitlyn,Leona"    |  "Briar,Lillia,Zed,Jhin,Senna"              | True
+```
+
 ### Feature Engineering
 - **Champion Encoding:**
   - Used **MultiLabelBinarizer** to convert lists of champions into a binary matrix.
